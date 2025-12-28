@@ -10,21 +10,27 @@ interface StatsCardProps {
   icon: LucideIcon;
   iconColor?: string;
   delay?: number;
+  onClick?: () => void;
 }
 
-export function StatsCard({ 
-  title, 
-  value, 
-  change, 
+export function StatsCard({
+  title,
+  value,
+  change,
   changeType = "neutral",
   icon: Icon,
   iconColor = "text-primary",
-  delay = 0
+  delay = 0,
+  onClick
 }: StatsCardProps) {
   return (
-    <Card 
-      className="overflow-hidden border-border/50 shadow-soft animate-fade-in"
+    <Card
+      className={cn(
+        "overflow-hidden border-border/50 shadow-soft animate-fade-in",
+        onClick && "cursor-pointer hover:shadow-lg transition-shadow"
+      )}
       style={{ animationDelay: `${delay}ms` }}
+      onClick={onClick}
     >
       <CardContent className="p-6">
         <div className="flex items-start justify-between">
