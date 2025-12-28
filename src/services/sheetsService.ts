@@ -13,6 +13,12 @@ export interface SheetMetadata {
   }[];
 }
 
+export interface SheetInfo {
+  title: string;
+  sheetId: number;
+  gridProperties: any;
+}
+
 export class SheetsService {
   static async fetchSheetData(sheetId: string, range: string): Promise<SheetData> {
     try {
