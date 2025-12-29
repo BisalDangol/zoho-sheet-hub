@@ -40,8 +40,8 @@ export default function Sheets() {
     try {
       setDataLoading(true);
       setSelectedSheet(sheet);
-      // Fetch all data from the sheet (assuming it starts from A1)
-      const range = `${sheet.title}!A:Z`; // Adjust range as needed
+      // Fetch all data from the sheet using the actual sheet name from metadata
+      const range = `${sheet.title}!A:Z`; // Use the actual sheet title from metadata
       const data = await SheetsService.fetchSheetData(sheetId, range);
       setSheetData(data);
     } catch (err) {

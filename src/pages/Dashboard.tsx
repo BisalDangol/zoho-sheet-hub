@@ -1,4 +1,5 @@
 import { Store, Users, FileSpreadsheet, TrendingUp } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
@@ -8,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export default function Dashboard() {
   const { user, role } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <DashboardLayout>
@@ -50,6 +52,7 @@ export default function Dashboard() {
             icon={FileSpreadsheet}
             iconColor="text-warning"
             delay={200}
+            onClick={() => navigate('/sheets')}
           />
           <StatsCard
             title="Performance"
@@ -73,16 +76,16 @@ export default function Dashboard() {
           <SheetChart
             sheetId="19NrXMTwx48I_KJbazkgorBRHWwgBfPnMoAIVNxSkM9U"
             range="Sheet1!A1:B10"
-            title="Sample Chart from Google Sheets"
-            dataKey="value"
-            labelKey="label"
+            title="Vendor Performance Overview"
+            dataKey="performance"
+            labelKey="vendor"
           />
           <SheetChart
             sheetId="19NrXMTwx48I_KJbazkgorBRHWwgBfPnMoAIVNxSkM9U"
             range="Sheet1!C1:D10"
-            title="Another Chart"
-            dataKey="amount"
-            labelKey="category"
+            title="Monthly Sales Trends"
+            dataKey="sales"
+            labelKey="month"
           />
         </div>
       </div>

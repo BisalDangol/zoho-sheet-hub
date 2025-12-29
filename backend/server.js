@@ -16,7 +16,7 @@ app.get('/api/sheets/:sheetId/metadata', async (req, res) => {
     const { sheetId } = req.params;
 
     // Use Google Sheets API v4 to get spreadsheet metadata (works with public sheets)
-    const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}?fields=sheets.properties`;
+    const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}?fields=sheets.properties&key=${process.env.GOOGLE_SHEETS_API_KEY}`;
 
     const response = await axios.get(apiUrl);
     const sheets = response.data.sheets.map(sheet => ({
@@ -46,41 +46,56 @@ app.get('/api/sheets/:sheetId/metadata', async (req, res) => {
   }
 });
 
-// API endpoint to fetch sheet data using CSV export (works with public sheets)
+// API endpoint to fetch sheet data using Google Sheets API v4
 app.get('/api/sheets/:sheetId/:range', async (req, res) => {
   try {
     const { sheetId, range } = req.params;
+    const apiKey = process.env.GOOGLE_SHEETS_API_KEY;
 
-    // Parse the range to extract sheet name and range (e.g., "Sheet2!A:Z" -> sheetName: "Sheet2", range: "A:Z")
+    console.log('API Key loaded:', apiKey ? 'Yes' : 'No');
+    console.log('Sheet ID:', sheetId);
+    console.log('Range:', range);
+
+    // Parse the range to extract sheet name and range (e.g., "Sheet1!A:Z" -> sheetName: "Sheet1", range: "A:Z")
     const [sheetName, dataRange] = range.split('!');
 
-    // First get metadata to find the sheet ID for the sheet name
-    const metadataUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}?fields=sheets.properties`;
+    // First get metadata to find the correct sheet name
+    const metadataUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}?fields=sheets.properties&key=${apiKey}`;
     const metadataResponse = await axios.get(metadataUrl);
-    const targetSheet = metadataResponse.data.sheets.find(sheet => sheet.properties.title === sheetName);
+    const sheets = metadataResponse.data.sheets;
 
-    if (!targetSheet) {
-      return res.status(404).json({ error: `Sheet "${sheetName}" not found` });
-    }
+    console.log('Available sheets:', sheets.map(s => s.properties.title));
 
-    // Use Google Sheets CSV export URL with specific sheet ID (gid parameter)
-    const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${targetSheet.properties.sheetId}`;
-
-    const response = await axios.get(csvUrl);
-    const csvData = response.data;
-
-    // Parse CSV data
-    const rows = csvData.split('\n').map(row =>
-      row.split(',').map(cell => cell.replace(/"/g, '').trim())
+    // Find the sheet that matches (case-insensitive)
+    const targetSheet = sheets.find(sheet =>
+      sheet.properties.title.toLowerCase() === sheetName.toLowerCase()
     );
 
-    if (!rows || rows.length === 0) {
-      return res.status(404).json({ error: 'No data found' });
+    if (!targetSheet) {
+      return res.status(404).json({
+        error: `Sheet "${sheetName}" not found. Available sheets: ${sheets.map(s => s.properties.title).join(', ')}`
+      });
+    }
+
+    const actualSheetName = targetSheet.properties.title;
+    console.log('Using sheet name:', actualSheetName);
+
+    // Get all values from the sheet
+    const fullSheetUrl = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${encodeURIComponent(actualSheetName)}?key=${apiKey}`;
+    console.log('Full sheet URL:', fullSheetUrl);
+
+    const response = await axios.get(fullSheetUrl);
+    const values = response.data.values;
+
+    console.log('Values received:', values ? values.length : 0, 'rows');
+
+    if (!values || values.length === 0) {
+      return res.status(404).json({ error: 'No data found in sheet' });
     }
 
     // Convert to JSON format with headers
-    const headers = rows[0];
-    const data = rows.slice(1).filter(row => row.some(cell => cell)).map(row => {
+    const headers = values[0] || [];
+    const data = values.slice(1).filter(row => row && row.some(cell => cell)).map(row => {
       const obj = {};
       headers.forEach((header, index) => {
         obj[header] = row[index] || '';
@@ -90,9 +105,9 @@ app.get('/api/sheets/:sheetId/:range', async (req, res) => {
 
     res.json({ data, headers });
   } catch (error) {
-    console.error('Error fetching sheet data:', error);
+    console.error('Error fetching sheet data:', error.response?.data || error.message);
     res.status(500).json({
-      error: 'Failed to fetch sheet data. Make sure the Google Sheet is public and accessible.'
+      error: 'Failed to fetch sheet data. Make sure the Google Sheet is public and the API key is set.'
     });
   }
 });
