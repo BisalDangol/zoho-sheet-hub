@@ -1,10 +1,15 @@
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
+const crypto = require('crypto');
+const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// Initialize Supabase admin client (only if needed for other endpoints)
+// const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
 // Middleware
 app.use(cors());
@@ -109,6 +114,43 @@ app.get('/api/sheets/:sheetId/:range', async (req, res) => {
     res.status(500).json({
       error: 'Failed to fetch sheet data. Make sure the Google Sheet is public and the API key is set.'
     });
+  }
+});
+
+// API endpoint to invite user
+app.post('/api/users/invite', async (req, res) => {
+  try {
+    const { email, full_name, role } = req.body;
+
+    if (!email || !full_name || !role) {
+      return res.status(400).json({ error: 'Email, full_name, and role are required' });
+    }
+
+    // Generate a temporary user ID for the invitation
+    const tempUserId = crypto.randomUUID();
+
+    // Store invitation data in a temporary table or just return success
+    // In a real app, you'd want to store this in a database table
+    const invitationData = {
+      id: tempUserId,
+      email,
+      full_name,
+      role,
+      invited_at: new Date().toISOString(),
+      status: 'pending'
+    };
+
+    console.log('User invitation created:', invitationData);
+
+    // For now, we'll just return success and the user can sign up manually
+    // In production, you'd send an email with a signup link
+    res.json({
+      message: 'Invitation created successfully. User will need to sign up manually.',
+      invitation: invitationData
+    });
+  } catch (error) {
+    console.error('Error creating invitation:', error);
+    res.status(500).json({ error: 'Failed to create invitation' });
   }
 });
 
