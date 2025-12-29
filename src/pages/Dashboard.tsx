@@ -3,6 +3,7 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { RecentActivity } from "@/components/dashboard/RecentActivity";
 import { VendorOverview } from "@/components/dashboard/VendorOverview";
+import { SheetChart } from "@/components/dashboard/SheetChart";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function Dashboard() {
@@ -65,6 +66,24 @@ export default function Dashboard() {
         <div className="grid gap-6 lg:grid-cols-2">
           <VendorOverview />
           <RecentActivity />
+        </div>
+
+        {/* Charts Section */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          <SheetChart
+            sheetId="19NrXMTwx48I_KJbazkgorBRHWwgBfPnMoAIVNxSkM9U"
+            range="Sheet1!A1:B10"
+            title="Sample Chart from Google Sheets"
+            dataKey="value"
+            labelKey="label"
+          />
+          <SheetChart
+            sheetId="19NrXMTwx48I_KJbazkgorBRHWwgBfPnMoAIVNxSkM9U"
+            range="Sheet1!C1:D10"
+            title="Another Chart"
+            dataKey="amount"
+            labelKey="category"
+          />
         </div>
       </div>
     </DashboardLayout>
